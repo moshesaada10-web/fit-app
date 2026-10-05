@@ -2,6 +2,10 @@ import { useRef, useState } from 'react';
 import { actions, exportJSON, parseBackup, useAppState } from '../store';
 import { Btn, Card, Confirm, Field, NumField, PageHeader, Toast, go, useToast } from '../ui/kit';
 import type { AppState } from '../types';
+import { findExercise } from '../data/plan';
+import { GROUP_HE, groupsHe } from '../data/muscles';
+import { formatShort, todayISO } from '../logic/dates';
+import { isAdjustmentActive } from '../logic/adjust';
 
 export default function Settings() {
   const st = useAppState();
@@ -38,6 +42,27 @@ export default function Settings() {
         <Field label="תאריך נקודת ההתחלה"><input className="input" type="date" value={s.baselineDate} onChange={(e) => e.target.value && actions.setSettings({ baselineDate: e.target.value })} /></Field>
         <label className="checkrow"><input type="checkbox" checked={s.legsCleared} onChange={(e) => actions.setSettings({ legsCleared: e.target.checked })} /><span>אישור פיזיותרפיסט/אורתופד לתרגילי רגליים</span></label>
         <p className="tiny muted">בלי אישור, לחיצת רגליים וכפיפת ברך מוחלפות אוטומטית בתרגיל חלופי.</p>
+      </Card>
+
+      <Card>
+        <h3>התאמות וסדר תרגילים</h3>
+        {isAdjustmentActive(st.adjustment, todayISO()) ? (
+          <div className="col" style={{ gap: 6 }}>
+            <p className="small">התאמה שבועית פעילה עד שבת {formatShort(st.adjustment!.until)}: {st.adjustment!.priority.length ? `${groupsHe(st.adjustment!.priority.map((p) => p.group))} בתחילת האימון` : 'בלי שינוי סדר'}{st.adjustment!.boosts.length ? `, סט נוסף ב${st.adjustment!.boosts.map((b) => findExercise(b.slotId)?.he).join(', ')}` : ''}.</p>
+            <Btn sm onClick={() => { actions.cancelAdjustment(); say('ההתאמה השבועית בוטלה'); }}>בטל התאמה שבועית</Btn>
+          </div>
+        ) : <p className="small muted">אין התאמה שבועית פעילה.</p>}
+        <h3>שינויים קבועים</h3>
+        {st.permanent.length === 0 && <p className="small muted">אין. שינוי קבוע נוצר רק כשמאשרים הצעה בסיכום השבועי.</p>}
+        {st.permanent.map((c) => (
+          <div key={c.id} className="row between small perm">
+            <span className="grow">
+              {c.kind === 'swap' ? `${findExercise(c.slotId!)?.he} ← ${findExercise(c.altId!)?.he}` : `${GROUP_HE[c.group!].he} תמיד בתחילת האימון`}
+              <span className="muted"> · מ־{formatShort(c.createdOn)}</span>
+            </span>
+            <Btn sm onClick={() => { actions.undoPermanent(c.id); say('השינוי בוטל'); }}>בטל</Btn>
+          </div>
+        ))}
       </Card>
 
       <Card>

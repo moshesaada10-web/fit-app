@@ -3,6 +3,7 @@ import type { AppState, Draft, ExLog, Session } from '../types';
 import { exercisePain, type PainLevel } from './pain';
 import { roundToStep, suggestProgression, type HistoryEntry, type Suggestion } from './progression';
 import { positionFor, sortSessions, targetSets, type Position } from './rotation';
+import { boostBlock, boostUsed, effectivePriority, isAdjustmentActive, orderByPriority } from './adjust';
 
 export function exerciseHistory(sessions: Session[], exerciseId: string): HistoryEntry[] {
   const out: HistoryEntry[] = [];
@@ -54,13 +55,36 @@ export function suggestFor(state: AppState, slot: Slot, exerciseId: string, pos:
   return { sug, pain };
 }
 
+export interface PlannedSlot {
+  slot: Slot;
+  exerciseId: string;
+  autoSwapped: boolean;
+  /** הוקדם בגלל עדיפות (שבועית או קבועה): הסבר לתג */
+  moved?: string;
+  /** סט נוסף מאושר מההתאמה השבועית: הסבר לתג */
+  boost?: string;
+  /** מיקום מקורי בתוכנית (0-based) */
+  origIndex: number;
+}
+
+/** סדר התרגילים והתאמות לאימון מסוים בתאריך מסוים (ללא שינוי ברוטציה) */
+export function planWorkout(state: AppState, type: WorkoutId, date: string, pos: Position = positionFor(state.sessions, state.settings.earlyDeloadFrom)): PlannedSlot[] {
+  const def = WORKOUTS[type];
+  const base = def.slots.map((slot) => { const r = resolveExerciseId(state, slot, def.slots); return { slot, exerciseId: r.id, autoSwapped: r.autoSwapped }; });
+  const ordered = orderByPriority(base, effectivePriority(state, date));
+  const adj = isAdjustmentActive(state.adjustment, date) ? state.adjustment : null;
+  return ordered.map(({ item, origIndex, reason }) => {
+    const b = adj?.boosts.find((x) => x.workout === type && x.slotId === item.slot.exerciseId);
+    const boost = b && adj && !boostUsed(state.sessions, adj, type, b.slotId) && boostBlock(state, item.slot, item.exerciseId, pos) === null ? b.reason : undefined;
+    return { slot: item.slot, exerciseId: item.exerciseId, autoSwapped: item.autoSwapped, moved: reason, boost, origIndex };
+  });
+}
+
 export function buildDraft(state: AppState, type: WorkoutId, date: string): Draft {
   const pos = positionFor(state.sessions, state.settings.earlyDeloadFrom);
-  const def = WORKOUTS[type];
-  const exercises: ExLog[] = def.slots.map((slot) => {
-    const { id } = resolveExerciseId(state, slot, def.slots);
+  const exercises: ExLog[] = planWorkout(state, type, date, pos).map(({ slot, exerciseId: id, moved, boost }) => {
     const { sug, pain } = suggestFor(state, slot, id, pos);
-    let n = targetSets(slot, pos).sets;
+    let n = targetSets(slot, pos).sets + (boost ? 1 : 0);
     if (pain === 'reduce') n = Math.max(1, n - 1);
     const w = sug.weight !== null ? roundToStep(sug.weight, 0.01) : null;
     return {
@@ -70,6 +94,8 @@ export function buildDraft(state: AppState, type: WorkoutId, date: string): Draf
       plannedSets: n,
       sets: Array.from({ length: n }, () => ({ w, r: null, done: false })),
       skipped: pain === 'pause' ? true : undefined,
+      ...(moved ? { moved } : {}),
+      ...(boost ? { boosted: boost } : {}),
     };
   });
   return { type, date, startedAt: Date.now(), exercises, notes: '', deload: pos.deload };

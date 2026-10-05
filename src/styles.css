@@ -174,3 +174,16 @@ details > summary { cursor: pointer; font-weight: 700; min-height: 44px; display
 @media (prefers-reduced-motion: no-preference) { .card, .btn { transition: background .15s, transform .08s; } .btn:active { transform: scale(.98); } }
 .dot svg { width: 20px; height: 20px; }
 .badge.sm { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; }
+
+/* סיכום שבועי */
+.verdict { font-size: 16.5px; gap: 8px; }
+.grp { display: flex; flex-direction: column; gap: 4px; }
+.grp.under .bar > i { background: var(--warn); }
+.grp.good .bar > i { background: var(--ok); }
+.sugg { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.sugg.info p { color: var(--muted); }
+.warn-t { color: var(--warn); }
+.tag { display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12.5px; font-weight: 700; background: var(--info-soft); color: var(--info); vertical-align: middle; line-height: 1.6; }
+.ex-head .tag { margin-inline-start: 0; }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.perm { border-bottom: 1px solid var(--line); padding-bottom: 8px; }

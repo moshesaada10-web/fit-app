@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { WORKOUTS, findExercise } from '../data/plan';
+import { groupsHe } from '../data/muscles';
 import { actions, useAppState } from '../store';
-import { addDays, formatLong, todayISO, weekStart } from '../logic/dates';
+import { addDays, formatLong, formatShort, todayISO, weekStart } from '../logic/dates';
 import { cardioTarget, nextWorkout, positionFor, sortSessions, targetSets } from '../logic/rotation';
 import { cardioName, phaseText, weekDone, weekNote } from '../logic/info';
 import { generalPain } from '../logic/pain';
-import { resolveExerciseId } from '../logic/workout';
+import { planWorkout } from '../logic/workout';
+import { effectivePriority, isAdjustmentActive } from '../logic/adjust';
+import { pendingReview, reviewWeekFor, weekLabel, weekSummary } from '../logic/weekly';
 import { Btn, Card, Chip, Confirm, Dots, Icon, NumField, PageHeader, go } from '../ui/kit';
 
 export default function Today() {
@@ -26,12 +29,15 @@ export default function Today() {
   const daily = st.daily[today] ?? { date: today };
   const weighedThisWeek = st.body.some((b) => b.date >= ws);
 
-  const preview = def.slots.map((s) => {
-    const { id } = resolveExerciseId(st, s, def.slots);
-    const ex = findExercise(id)!;
-    const n = targetSets(s, pos);
-    return { s, ex, n, swapped: id !== s.exerciseId };
+  const preview = planWorkout(st, next, today, pos).map((p) => {
+    const ex = findExercise(p.exerciseId)!;
+    const n = targetSets(p.slot, pos);
+    return { s: p.slot, ex, n, swapped: p.exerciseId !== p.slot.exerciseId, moved: p.moved, boost: p.boost };
   });
+  const prio = effectivePriority(st, today);
+  const adj = isAdjustmentActive(st.adjustment, today) ? st.adjustment : null;
+  const pendingWs = pendingReview(st, today);
+  const pendingSum = pendingWs ? weekSummary(st, pendingWs) : null;
 
   return (
     <>
@@ -58,6 +64,15 @@ export default function Today() {
         </Card>
       )}
 
+      {pendingWs && pendingSum && (
+        <Card tone="info" className="review-card">
+          <div className="row between wrap"><h3>סיכום שבועי</h3><Chip tone="info"><span className="num">{weekLabel(pendingWs)}</span></Chip></div>
+          <ul className="clean small">{pendingSum.verdict.slice(0, 2).map((v) => <li key={v}>{v}</li>)}</ul>
+          {pendingSum.under.length > 0 && pendingSum.sessionsDone > 0 && <p className="small">יש הצעה לסדר את השבוע הבא כך ש{groupsHe(pendingSum.under.slice(0, 2), true)} יהיו בתחילת האימון.</p>}
+          <Btn kind="primary" block onClick={() => go(`/review/${pendingWs}`)}>לסיכום השבוע</Btn>
+        </Card>
+      )}
+
       <Card tone="brand">
         <div className="row between wrap">
           <Chip tone="brand">האימון הבא</Chip>
@@ -69,13 +84,19 @@ export default function Today() {
         </div>
         <p className="small">{weekNote(pos)}</p>
         <div className="col" style={{ gap: 4 }}>
-          {preview.map(({ s, ex, n, swapped }, i) => (
+          {preview.map(({ s, ex, n, swapped, moved, boost }, i) => (
             <div key={i} className="row between small" style={{ gap: 8 }}>
-              <span className="grow">{i + 1}. {ex.he}{swapped && <span className="muted"> (חלופה)</span>}</span>
-              <span className="num bold">{n.sets} × {s.repMin === s.repMax ? s.repMin : `${s.repMin}–${s.repMax}`}{ex.unit === 'sec' ? '"' : ''}</span>
+              <span className="grow">{i + 1}. {ex.he}{swapped && <span className="muted"> (חלופה)</span>}{moved && <span className="tag" title={moved}>הוקדם</span>}</span>
+              <span className="num bold">{n.sets + (boost ? 1 : 0)} × {s.repMin === s.repMax ? s.repMin : `${s.repMin}–${s.repMax}`}{ex.unit === 'sec' ? '"' : ''}</span>
             </div>
           ))}
         </div>
+        {prio.length > 0 && (
+          <p className="tiny">
+            <b>{groupsHe(prio.map((p) => p.group))}</b> בתחילת האימון{adj ? ` (התאמה שבועית עד שבת ${formatShort(adj.until)})` : ' (קבוע)'}.
+            {preview.some((p) => p.boost) && ' כולל סט נוסף אחד.'}
+          </p>
+        )}
         {st.draft ? (
           <Btn kind="primary" block onClick={() => go('/workout')}>המשך אימון {st.draft.type}</Btn>
         ) : (
@@ -97,6 +118,7 @@ export default function Today() {
           </div>
         </div>
         <p className="tiny muted">הסדר לפי אימונים שהושלמו, לא לפי תאריכים. אם השבוע היו רק 2, השבוע הבא מתחיל מהשלישי.</p>
+        {!pendingWs && st.sessions.length > 0 && <Btn sm kind="soft" href={`/review/${reviewWeekFor(today)}`}>סיכום שבועי</Btn>}
         <div className="row between small">
           <span>{pos.deload ? 'עכשיו בשבוע קל' : `עוד ${pos.untilDeload} אימוני כוח עד שבוע קל`}</span>
           {pos.early ? (

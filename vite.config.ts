@@ -32,6 +32,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,webp,png,svg,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // עם injectRegister:false הפלאגין לא מוסיף את אלה לבד. בלעדיהם גרסה חדשה מחכה עד שכל החלונות נסגרים
+        // (בטלפון עם אפליקציה מותקנת זה יכול לקחת ימים). כך היא נכנסת מיד והדף נטען מחדש (autoUpdate).
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],

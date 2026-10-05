@@ -111,7 +111,7 @@ export function useToast(): [string | null, (m: string) => void] {
   return [m, (x: string) => { setM(x); setTimeout(() => setM(null), 2400); }];
 }
 
-export function PageHeader({ title, sub, right, onBack }: { title: string; sub?: string; right?: ReactNode; onBack?: () => void }) {
+export function PageHeader({ title, sub, right, onBack }: { title: string; sub?: ReactNode; right?: ReactNode; onBack?: () => void }) {
   return (
     <header className="header">
       <div className="row" style={{ minWidth: 0 }}>

@@ -117,6 +117,12 @@ function ExerciseCard({ idx, e, st, open, onToggle, onSwap, setEx, onNext }: {
             {e.skipped ? 'מדולג' : `${e.plannedSets} × ${e.repMin === e.repMax ? e.repMin : `${e.repMin}–${e.repMax}`}${ex.unit === 'sec' ? ' שנ׳' : ''}${ex.perSide ? ' לצד' : ''} · ${done}/${e.sets.length}`}
             {swapped && ' · חלופה'}
           </span>
+          {(e.moved || e.boosted) && (
+            <span className="row wrap" style={{ gap: 4, marginTop: 2 }}>
+              {e.moved && <span className="tag">הוקדם · {e.moved}</span>}
+              {e.boosted && <span className="tag ok">{e.boosted}</span>}
+            </span>
+          )}
         </span>
         <span style={{ transform: open ? 'rotate(90deg)' : 'rotate(-90deg)', display: 'grid' }}><Icon.back /></span>
       </button>

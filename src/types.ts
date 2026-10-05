@@ -1,4 +1,5 @@
 import type { WorkoutId } from './data/plan';
+import type { MuscleGroup } from './data/muscles';
 
 export interface SetLog { w: number | null; r: number | null; done: boolean }
 
@@ -13,6 +14,10 @@ export interface ExLog {
   sets: SetLog[];
   skipped?: boolean;
   note?: string;
+  /** הוקדם לתחילת האימון בגלל איזון שבועי/קבוע: הסבר קצר לתג */
+  moved?: string;
+  /** סט נוסף מהתאמה שבועית: הסבר קצר לתג */
+  boosted?: string;
 }
 
 export interface Pain { back: number; shin: number; knee: number }
@@ -84,6 +89,44 @@ export interface Draft {
   deload: boolean;
 }
 
+/** החלטה על סיכום שבועי (המפתח: יום ראשון של השבוע) */
+export interface ReviewRecord {
+  decision: 'approved' | 'dismissed' | 'ack';
+  at: string; // YYYY-MM-DD
+}
+
+export interface PriorityItem { group: MuscleGroup; reason: string }
+export interface BoostItem {
+  workout: WorkoutId;
+  slotId: string;
+  group: MuscleGroup;
+  reason: string;
+}
+
+/** התאמה לשבוע אחד שאושרה מתוך סיכום שבועי. חוזרת לבד לתוכנית אחרי `until`. */
+export interface WeekAdjustment {
+  /** יום ראשון של השבוע שנסקר */
+  fromWeek: string;
+  approvedOn: string;
+  /** היום האחרון שבו ההתאמה פעילה (שבת של השבוע הבא) */
+  until: string;
+  priority: PriorityItem[];
+  boosts: BoostItem[];
+}
+
+/** שינוי קבוע שאושר במפורש מתוך דפוסים ארוכי טווח. אפשר לבטל בהגדרות. */
+export interface PermanentChange {
+  id: string;
+  kind: 'swap' | 'priority';
+  createdOn: string;
+  /** swap: התרגיל המקורי והחלופה, וההעדפה הקודמת לשחזור */
+  slotId?: string;
+  altId?: string;
+  prevPref?: string | null;
+  /** priority: קבוצה שתמיד מוקדמת */
+  group?: MuscleGroup;
+}
+
 export interface AppState {
   version: 1;
   settings: Settings;
@@ -94,4 +137,11 @@ export interface AppState {
   draft: Draft | null;
   /** חלופה מועדפת לכל תרגיל מקורי */
   swapPrefs: Record<string, string>;
+  /** סיכומים שבועיים שטופלו */
+  reviews: Record<string, ReviewRecord>;
+  /** התאמה שבועית פעילה (או שפג תוקפה) */
+  adjustment: WeekAdjustment | null;
+  permanent: PermanentChange[];
+  /** הצעות דפוס שנדחו: מזהה -> תאריך הדחייה (לא מציעים שוב 4 שבועות) */
+  dismissedSuggestions: Record<string, string>;
 }

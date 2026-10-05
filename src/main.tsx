@@ -5,4 +5,18 @@ import App from './App';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
-if ('serviceWorker' in navigator) registerSW({ immediate: true });
+
+// autoUpdate: גרסה חדשה מותקנת ומופעלת לבד (skipWaiting + clientsClaim) והדף נטען מחדש.
+// הנתונים ב-localStorage (כולל אימון פתוח) לא נפגעים. אפליקציה מותקנת שנשארת פתוחה ברקע
+// לא תמיד מנווטת מחדש, לכן בודקים עדכון כשחוזרים אליה וגם כל שעה.
+if ('serviceWorker' in navigator) {
+  registerSW({
+    immediate: true,
+    onRegisteredSW(_url, reg) {
+      if (!reg) return;
+      const check = () => { if (navigator.onLine) reg.update().catch(() => {}); };
+      setInterval(check, 60 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    },
+  });
+}

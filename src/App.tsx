@@ -6,10 +6,11 @@ import CardioForm from './screens/CardioForm';
 import Progress from './screens/Progress';
 import Safety, { Physio } from './screens/Safety';
 import Settings from './screens/Settings';
+import Review from './screens/Review';
 import { Icon, useHash } from './ui/kit';
 
 const NAV = [
-  { id: 'today', label: 'היום', icon: <Icon.today />, match: ['today', 'workout', 'cardio', 'settings'] },
+  { id: 'today', label: 'היום', icon: <Icon.today />, match: ['today', 'workout', 'cardio', 'settings', 'review'] },
   { id: 'log', label: 'יומן', icon: <Icon.log />, match: ['log', 'session'] },
   { id: 'progress', label: 'התקדמות', icon: <Icon.chart />, match: ['progress'] },
   { id: 'safety', label: 'בטיחות', icon: <Icon.shield />, match: ['safety'], cls: 'safety' },
@@ -32,6 +33,7 @@ export default function App() {
     case 'plan': view = <Progress tab="plan" />; break;
     case 'safety': view = parts[1] === 'physio' ? <Physio /> : <Safety />; break;
     case 'settings': view = <Settings />; break;
+    case 'review': view = <Review key={parts[1] ?? ''} week={parts[1]} />; break;
     default: view = <Today />;
   }
 

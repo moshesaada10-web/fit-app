@@ -1,6 +1,7 @@
 // צילומי מסך 390x844 של המסכים המרכזיים. דורש: npm run build, ואז vite preview רץ על 4173.
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
+import { REVIEW_NOW, reviewSeed } from './review-seed.mjs';
 
 const BASE = process.env.BASE || 'http://localhost:4173/';
 const OUT = new URL('../docs/screenshots/', import.meta.url).pathname;
@@ -109,6 +110,52 @@ for (const [name, hash, o] of shots) {
   if (process.env.DEBUG_SCROLL) console.log('scrollY', await page.evaluate(() => [scrollY, document.querySelector('.set')?.getBoundingClientRect().top]));
   await page.screenshot({ path: `${OUT}${name}.png` });
   // בדיקת גלישה אופקית
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  console.log(name.padEnd(30), overflow > 0 ? `OVERFLOW ${overflow}px` : 'ok', errors.length ? 'ERR ' + errors.join('|') : '');
+  await ctx.close();
+}
+
+// ---- סיכום שבועי (שעון קבוע: שישי 9.10.2026, נתוני הדגמה של 4 שבועות)
+const reviewShots = [
+  ['20-weekly-review-card', '#/today', {}],
+  ['21-weekly-review', '#/review', {}],
+  ['21b-weekly-review-groups', '#/review', { scrollTo: 'סטים לפי קבוצת שרירים' }],
+  ['21c-weekly-review-proposal', '#/review', { scrollTo: 'התאמה לשבוע הבא' }],
+  ['21d-weekly-review-patterns', '#/review', { approve: true, scrollTo: 'דפוסים ·' }],
+  ['22-today-reordered', '#/today', { approve: true }],
+  ['22b-workout-reordered', '#/workout', { approve: true, start: true }],
+  ['22c-workout-reordered-open', '#/workout', { approve: true, start: true, openIdx: 4 }],
+  ['23-settings-adjustments', '#/settings', { approve: true, permanent: true, scrollTo: 'התאמות וסדר תרגילים' }],
+];
+for (const [name, hash, o] of reviewShots) {
+  if (process.env.ONLY && !name.startsWith(process.env.ONLY)) continue;
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'he-IL', timezoneId: 'Asia/Jerusalem', serviceWorkers: 'block' });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.clock.setFixedTime(new Date(REVIEW_NOW));
+  await page.addInitScript((s) => { if (!localStorage.getItem('moshe-fitness-v1')) localStorage.setItem('moshe-fitness-v1', JSON.stringify(s)); }, reviewSeed());
+  await page.goto(BASE + '#/today');
+  await page.waitForSelector('.nav');
+  if (o.approve) {
+    await page.getByRole('button', { name: 'לסיכום השבוע' }).click();
+    await page.getByRole('button', { name: 'אשר שינויים' }).click();
+    if (o.permanent) await page.getByRole('button', { name: 'השאר ראשון קבוע' }).first().click();
+    await page.waitForTimeout(200);
+  }
+  await page.evaluate((h) => { location.hash = h; }, o.start ? '#/today' : hash);
+  await page.waitForTimeout(300);
+  if (o.start) {
+    await page.getByRole('button', { name: /התחל אימון/ }).click();
+    await page.waitForSelector('.ex');
+    await page.evaluate(() => document.querySelectorAll('.ex-head[aria-expanded="true"]').forEach((b) => b.click()));
+    if (o.openIdx !== undefined) { await page.locator('.ex-head').nth(o.openIdx).click(); await page.waitForTimeout(200); await page.evaluate((n) => document.querySelectorAll('.ex')[n].scrollIntoView(), o.openIdx); }
+    else await page.evaluate(() => window.scrollTo(0, 230));
+  }
+  if (o.scrollTo) await page.getByText(o.scrollTo).first().evaluate((el) => el.closest('.card').scrollIntoView({ block: 'start' }));
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${OUT}${name}.png` });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   console.log(name.padEnd(30), overflow > 0 ? `OVERFLOW ${overflow}px` : 'ok', errors.length ? 'ERR ' + errors.join('|') : '');
   await ctx.close();
