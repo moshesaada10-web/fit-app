@@ -4,6 +4,7 @@ import { actions, useAppState } from '../store';
 import { addDays, formatLong, formatShort, todayISO } from '../logic/dates';
 import { GOAL_BAND_KG, expectedGoalDate, goalReached, movingAverage, trendStatus, weeklySeries } from '../logic/body';
 import { cardioName, PHASE_HE, phaseText } from '../logic/info';
+import { cardioPlanFor } from '../logic/ski';
 import { cardioTarget, positionFor, sortSessions } from '../logic/rotation';
 import { exerciseHistory } from '../logic/workout';
 import { workingWeight } from '../logic/progression';
@@ -285,7 +286,7 @@ function StrengthTab() {
 function CardioTab() {
   const st = useAppState();
   const pos = positionFor(st.sessions, st.settings.earlyDeloadFrom);
-  const t = cardioTarget(pos);
+  const t = cardioPlanFor(st.settings, todayISO(), pos, cardioTarget(pos), false).target;
   const list = [...st.cardio].sort((a, b) => a.date.localeCompare(b.date));
   const recent = list.slice(-12);
   const hrs = recent.map((c) => c.avgHr ?? null);

@@ -3,13 +3,16 @@ import { CARDIO_TYPES } from '../data/plan';
 import { actions, useAppState } from '../store';
 import { todayISO } from '../logic/dates';
 import { cardioTarget, intervalsAllowed, positionFor } from '../logic/rotation';
+import { cardioPlanFor, SKI_INTERVALS_HE } from '../logic/ski';
+import { generalPain } from '../logic/pain';
 import { Btn, Card, Confirm, Field, NumField, PageHeader, go } from '../ui/kit';
 
 export default function CardioForm({ id, date0 }: { id?: string; date0?: string }) {
   const st = useAppState();
   const ex = id ? st.cardio.find((c) => c.id === id) : undefined;
   const pos = positionFor(st.sessions, st.settings.earlyDeloadFrom);
-  const tgt = cardioTarget(pos);
+  const cp = cardioPlanFor(st.settings, todayISO(), pos, cardioTarget(pos), generalPain(st.sessions).level !== 'none');
+  const tgt = cp.target;
   const [date, setDate] = useState(ex?.date ?? date0 ?? todayISO());
   const [type, setType] = useState(ex?.type ?? 'bike');
   const [minutes, setMinutes] = useState<number | null>(ex?.minutes ?? tgt.min);
@@ -22,7 +25,7 @@ export default function CardioForm({ id, date0 }: { id?: string; date0?: string 
   const [notes, setNotes] = useState(ex?.notes ?? '');
   const [del, setDel] = useState(false);
   const t = CARDIO_TYPES.find((c) => c.id === type)!;
-  const canIntervals = intervalsAllowed(pos);
+  const canIntervals = intervalsAllowed(pos) || cp.skiIntervals;
   const hard = (effort ?? 0) > 5;
 
   const save = () => {
@@ -54,7 +57,8 @@ export default function CardioForm({ id, date0 }: { id?: string; date0?: string 
           <input id="int" type="checkbox" disabled={!canIntervals} checked={intervals} onChange={(e) => setIntervals(e.target.checked)} />
           <label htmlFor="int">אינטרוולים עדינים{!canIntervals && ' (רק אחרי שבוע 8, ורק אם הברך, השוק והגב רגועים)'}</label>
         </div>
-        {canIntervals && (
+        {cp.skiIntervals && <p className="small muted"><b>הכנה לסקי:</b> {SKI_INTERVALS_HE}</p>}
+        {canIntervals && !cp.skiIntervals && (
           <p className="small muted">אחרי 10 דק׳ חימום: 4–6 חזרות של דקה בקצב מעט גבוה (מדברים רק במשפטים קצרים), ו־2 דקות קלות ביניהן. לא ספרינטים. אם יש החמרה, חוזרים ל־Zone 2 בלבד.</p>
         )}
         <Field label="הערות"><textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>

@@ -7,6 +7,8 @@ import { positionFor } from '../logic/rotation';
 import { PHASE_HE } from '../logic/info';
 import { exerciseHistory, stepFor, suggestFor } from '../logic/workout';
 import type { AppState, ExLog, SetLog } from '../types';
+import { SKI_EXERCISES } from '../data/ski';
+import { skiWeek } from '../logic/ski';
 import { Btn, Card, Chip, Confirm, Icon, NumField, PageHeader, Sheet, go } from '../ui/kit';
 
 export default function Workout() {
@@ -60,10 +62,13 @@ export default function Workout() {
         )}
       </Card>
 
-      {d.exercises.map((e, i) => (
-        <ExerciseCard key={i} idx={i} e={e} st={st} open={open === i} onToggle={() => setOpen(open === i ? -1 : i)}
+      {d.exercises.map((e, i) => (<div key={i} style={{ display: 'contents' }}>
+        {e.ski && !d.exercises[i - 1]?.ski && (
+          <Card tone="info" className="ski-head"><h3>סיום: הכנה לסקי</h3><p className="small">כ־10 דק׳, בשליטה ובלי כאב. בלי קפיצות ובלי כיפוף ברך עמוק. מנוחה קצרה בין סטים.</p></Card>
+        )}
+        <ExerciseCard idx={i} e={e} st={st} open={open === i} onToggle={() => setOpen(open === i ? -1 : i)}
           onSwap={() => setSwapFor(i)} setEx={(fn) => setEx(i, fn)} onNext={() => setOpen(Math.min(i + 1, d.exercises.length - 1))} />
-      ))}
+      </div>))}
 
       <Card>
         <div className="field"><label htmlFor="notes">הערות לאימון</label>
@@ -96,6 +101,7 @@ function ExerciseCard({ idx, e, st, open, onToggle, onSwap, setEx, onNext }: {
   const unit = ex.unit === 'sec' ? 'שנ׳' : 'חזרות';
   const painInfo = exercisePain(st.sessions, e.slotId, st.settings.pauseCleared[e.slotId]);
   const legsNotCleared = (orig.legs || ex.legs) && !st.settings.legsCleared;
+  const skiCue = e.ski ? (SKI_EXERCISES[e.slotId]?.cue?.[skiWeek(st.settings, todayISO())?.stage ?? 0]) : undefined;
 
   const upd = (si: number, p: Partial<SetLog>) => setEx((x) => ({ ...x, sets: x.sets.map((s, k) => (k === si ? { ...s, ...p } : s)) }));
   const toggleDone = (si: number) => {
@@ -129,8 +135,10 @@ function ExerciseCard({ idx, e, st, open, onToggle, onSwap, setEx, onNext }: {
       {open && (
         <div className="ex-body">
           <div className="row wrap">
-            {legsNotCleared && <Chip tone="warn">תלוי באישור פיזיותרפיסט</Chip>}
+            {legsNotCleared && !e.ski && <Chip tone="warn">תלוי באישור פיזיותרפיסט</Chip>}
+            {e.ski && orig.legs && <Chip tone="warn">{st.settings.legsCleared ? 'אושר על ידי פיזיותרפיסט' : 'דורש אישור פיזיותרפיסט'}</Chip>}
             {swapped && <Chip tone="info">במקום: {orig.he}</Chip>}
+            {e.ski && <Chip tone="info">סקי</Chip>}
             {painInfo.level === 'reduce' && <Chip tone="warn">אחרי כאב: סט פחות, קל יותר</Chip>}
             {painInfo.level === 'pause' && <Chip tone="danger">מושהה · פיזיותרפיסט</Chip>}
           </div>
@@ -148,9 +156,11 @@ function ExerciseCard({ idx, e, st, open, onToggle, onSwap, setEx, onNext }: {
           </div>
           <div className="emph"><b>הדגש שלך</b>{ex.emphasis}</div>
 
-          <div className={`sug ${sug.kind === 'increase' ? 'up' : sug.kind === 'reduce' || sug.kind === 'paused' ? sug.kind : ''}`}>
+          {e.ski ? (
+            <div className="sug"><b>היעד: </b>{e.plannedSets} × {e.repMin}{ex.unit === 'sec' ? ' שנ׳' : ' חזרות'}{ex.perSide ? ' לכל צד' : ''}{skiCue ? `. ${skiCue}` : ''}</div>
+          ) : <div className={`sug ${sug.kind === 'increase' ? 'up' : sug.kind === 'reduce' || sug.kind === 'paused' ? sug.kind : ''}`}>
             <b>הצעה: </b>{sug.text}
-          </div>
+          </div>}
           {last && (
             <div className="last">אימון קודם ({formatShort(last.date)}): <span className="num">{last.sets.filter((s) => s.done).map((s) => (s.w ? `${s.w}×${s.r}` : `${s.r}`)).join(' · ') || '—'}</span>{last.deload ? ' (שבוע קל)' : ''}</div>
           )}
@@ -193,7 +203,7 @@ function ExerciseCard({ idx, e, st, open, onToggle, onSwap, setEx, onNext }: {
               <div className="row wrap">
                 <Btn sm onClick={() => setEx((x) => ({ ...x, sets: [...x.sets, { w: x.sets[x.sets.length - 1]?.w ?? null, r: null, done: false }] }))}>+ סט</Btn>
                 {e.sets.length > 1 && <Btn sm onClick={() => setEx((x) => ({ ...x, sets: x.sets.slice(0, -1) }))}>− סט</Btn>}
-                <Btn sm onClick={onSwap}><Icon.swap /> החלף תרגיל</Btn>
+                {!e.ski && <Btn sm onClick={onSwap}><Icon.swap /> החלף תרגיל</Btn>}
                 <Btn sm kind="ghost" onClick={() => setEx((x) => ({ ...x, skipped: true }))}>דלג</Btn>
               </div>
               {ex.kind !== 'bodyweight' && (

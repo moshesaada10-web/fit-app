@@ -5,12 +5,15 @@ import { buildDraft } from './logic/workout';
 import { GROUPS, type MuscleGroup } from './data/muscles';
 import type { AppState, BodyEntry, BoostItem, CardioEntry, DailyLog, Draft, Pain, PermanentChange, PriorityItem, ReviewRecord, Session, Settings, WeekAdjustment } from './types';
 
+import { SKI_DEFAULT_TRIP } from './data/ski';
+
 const KEY = 'moshe-fitness-v1';
 
 export function defaultSettings(today = todayISO()): Settings {
   return {
     heightCm: 175, baselineKg: 90, baselineDate: today, goalKg: 85, pastKg: 114,
     legsCleared: false, earlyDeloadFrom: null, stepOverrides: {}, pauseCleared: {}, physioChecked: {},
+    skiPrep: true, skiTripDate: SKI_DEFAULT_TRIP,
   };
 }
 
@@ -34,7 +37,7 @@ export function parseBackup(text: string): AppState {
   const base = emptyState();
   return {
     ...base, ...d,
-    settings: { ...base.settings, ...(d.settings ?? {}) },
+    settings: cleanSettings({ ...base.settings, ...(d.settings ?? {}) }),
     daily: d.daily && typeof d.daily === 'object' ? d.daily : {},
     swapPrefs: d.swapPrefs ?? {},
     draft: d.draft ?? null,
@@ -46,6 +49,9 @@ export function parseBackup(text: string): AppState {
   } as AppState;
 }
 
+function cleanSettings(s: Settings): Settings {
+  return { ...s, skiPrep: typeof s.skiPrep === 'boolean' ? s.skiPrep : true, skiTripDate: isDate(s.skiTripDate) ? s.skiTripDate : SKI_DEFAULT_TRIP };
+}
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 const isDate = (x: unknown): x is string => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x);
 const isGroup = (x: unknown): x is MuscleGroup => GROUPS.includes(x as MuscleGroup);

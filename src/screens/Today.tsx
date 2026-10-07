@@ -9,6 +9,7 @@ import { generalPain } from '../logic/pain';
 import { planWorkout } from '../logic/workout';
 import { effectivePriority, isAdjustmentActive } from '../logic/adjust';
 import { pendingReview, reviewWeekFor, weekLabel, weekSummary } from '../logic/weekly';
+import { SKI_INTERVALS_HE, SKI_STAGE_HE, cardioPlanFor, skiFinisher } from '../logic/ski';
 import { Btn, Card, Chip, Confirm, Dots, Icon, NumField, PageHeader, go } from '../ui/kit';
 
 export default function Today() {
@@ -21,7 +22,11 @@ export default function Today() {
   const done = weekDone(st.sessions);
   const ws = weekStart(today);
   const cardioWeek = st.cardio.filter((c) => c.date >= ws && c.date <= addDays(ws, 6)).length;
-  const cTarget = cardioTarget(pos);
+  const gp0 = generalPain(st.sessions);
+  const cp = cardioPlanFor(st.settings, today, pos, cardioTarget(pos), gp0.level !== 'none');
+  const cTarget = cp.target;
+  const ski = cp.w;
+  const skiPreview = skiFinisher(st.settings, next, today, pos);
   const sorted = sortSessions(st.sessions);
   const latest = sorted[sorted.length - 1];
   const needsMorning = latest && latest.pain && !latest.nextMorning && latest.date < today && latest.date >= addDays(today, -3);
@@ -73,6 +78,20 @@ export default function Today() {
         </Card>
       )}
 
+      {ski && (
+        <Card tone="tight" className="ski-card">
+          <div className="row between wrap">
+            <h3>הכנה לסקי</h3>
+            <Chip tone={ski.taper ? 'warn' : 'info'}>{ski.daysLeft === 0 ? 'היום!' : `עוד ${ski.daysLeft} ימים`}</Chip>
+          </div>
+          <p className="small">
+            {ski.before ? `הבלוק מתחיל בעוד ${ski.daysLeft - 84} ימים; עד אז שלב ההיכרות.` : `שבוע ${ski.week} מתוך 12 · ${SKI_STAGE_HE[ski.stage]}.`}
+            {ski.taper && ' שבוע אחרון לפני הטיול: כ־40% פחות נפח, לנוח ולהגיע רענן.'}
+          </p>
+          <p className="tiny muted">הטיול ב־{formatShort(st.settings.skiTripDate)} · אפשר לשנות או לכבות בהגדרות.</p>
+        </Card>
+      )}
+
       <Card tone="brand">
         <div className="row between wrap">
           <Chip tone="brand">האימון הבא</Chip>
@@ -91,6 +110,17 @@ export default function Today() {
             </div>
           ))}
         </div>
+        {skiPreview.length > 0 && (
+          <div className="col" style={{ gap: 4 }}>
+            <span className="label">סיום סקי · כ־10 דק׳</span>
+            {skiPreview.map((it, i) => (
+              <div key={it.slotId} className="row between small" style={{ gap: 8 }}>
+                <span className="grow">{preview.length + i + 1}. {it.ex.he}{it.swapped && <span className="muted"> (חלופה)</span>}</span>
+                <span className="num bold">{it.sets} × {it.dose}{it.ex.unit === 'sec' ? '"' : ''}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {prio.length > 0 && (
           <p className="tiny">
             <b>{groupsHe(prio.map((p) => p.group))}</b> בתחילת האימון{adj ? ` (התאמה שבועית עד שבת ${formatShort(adj.until)})` : ' (קבוע)'}.
@@ -135,6 +165,7 @@ export default function Today() {
           {cTarget.min === cTarget.max ? `${cTarget.min}` : `${cTarget.min}–${cTarget.max}`} דקות בקצב שיחה{cTarget.easy ? ', קל מאוד' : ''}.
           {' '}אופניים, אליפטי, הליכה בשיפוע קל או שחייה. בלי ריצה ובלי קפיצות.
         </p>
+        {cp.skiIntervals && <p className="small"><b>אינטרוולים לסקי:</b> {SKI_INTERVALS_HE}</p>}
         <div className="row wrap">
           <Btn kind="soft" href="/cardio/new">רשום אירובי</Btn>
           {st.cardio.length > 0 && (() => { const c = [...st.cardio].sort((a, b) => b.date.localeCompare(a.date))[0]; return <span className="small muted">אחרון: {cardioName(c.type)} · {c.minutes} דק׳</span>; })()}

@@ -45,6 +45,13 @@ export default function Settings() {
       </Card>
 
       <Card>
+        <h3>הכנה לסקי</h3>
+        <label className="checkrow"><input type="checkbox" checked={s.skiPrep} onChange={(e) => actions.setSettings({ skiPrep: e.target.checked })} /><span>בלוק 'הכנה לסקי' (12 שבועות לפני הטיול)</span></label>
+        <Field label="תאריך הטיול"><input className="input" type="date" value={s.skiTripDate} disabled={!s.skiPrep} onChange={(e) => e.target.value && actions.setSettings({ skiTripDate: e.target.value })} /></Field>
+        <p className="tiny muted">כ־10 דק׳ בסוף כל אימון: יציבות, ישבן, ליבה ושיווי משקל. בלי קפיצות ובלי כיפוף ברך עמוק. עלייה למדרגה וישיבה על קיר רק עם אישור פיזיותרפיסט; עד אז חלופה. בשבוע האחרון לפני הטיול: כ־40% פחות נפח.</p>
+      </Card>
+
+      <Card>
         <h3>התאמות וסדר תרגילים</h3>
         {isAdjustmentActive(st.adjustment, todayISO()) ? (
           <div className="col" style={{ gap: 6 }}>

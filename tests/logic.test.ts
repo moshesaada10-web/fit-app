@@ -215,8 +215,8 @@ describe('בניית אימון', () => {
   it('שבועות 1-2: 2 סטים; רגליים מוחלפות בלי אישור', () => {
     const st = emptyState();
     const d = buildDraft(st, 'A', '2026-10-04');
-    expect(d.exercises).toHaveLength(8);
-    expect(d.exercises.every((e) => e.sets.length === 2)).toBe(true);
+    expect(d.exercises.filter((e) => !e.ski)).toHaveLength(8);
+    expect(d.exercises.filter((e) => !e.ski).every((e) => e.sets.length === 2)).toBe(true);
     const lp = d.exercises.find((e) => e.slotId === 'leg-press')!;
     expect(lp.exerciseId).not.toBe('leg-press');
     const lc = d.exercises.find((e) => e.slotId === 'leg-curl')!;
@@ -239,7 +239,7 @@ describe('בניית אימון', () => {
     st.sessions = Array.from({ length: 15 }, (_, i) => sess(`2026-08-${String(i + 1).padStart(2, '0')}`, (['A', 'B', 'C'] as const)[i % 3]));
     const d = buildDraft(st, 'A', '2026-10-04');
     expect(d.deload).toBe(true);
-    expect(d.exercises.every((e) => e.sets.length === 2)).toBe(true);
+    expect(d.exercises.filter((e) => !e.ski).every((e) => e.sets.length === 2)).toBe(true);
   });
 });
 

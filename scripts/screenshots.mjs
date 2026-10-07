@@ -61,6 +61,10 @@ const shots = [
   ['17-settings', '#/settings', {}],
   ['18-today-dark', '#/today', { dark: true }],
   ['19-workout-dark', '#/workout', { dark: true, start: true, openIdx: 0 }],
+  ['24-today-ski-countdown', '#/today', {}],
+  ['25-workout-ski-finisher', '#/workout', { start: true, openIdx: 8 }],
+  ['25b-workout-ski-gated', '#/workout', { start: true, openIdx: 10 }],
+  ['26-settings-ski', '#/settings', { scrollTo: 'הכנה לסקי' }],
 ];
 
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });

@@ -1,4 +1,5 @@
 // מקור האמת: moshe-training-plan-v2 (HTML/PDF). התרגילים, הסטים והחזרות נלקחו משם ללא שינוי.
+import { SKI_EXERCISES } from './ski';
 export type WorkoutId = 'A' | 'B' | 'C';
 export type Unit = 'reps' | 'sec';
 export type Kind = 'machine' | 'cable' | 'dumbbell' | 'bodyweight';
@@ -376,6 +377,7 @@ export function altAsExercise(a: Alternative): Exercise {
 
 export function findExercise(id: string): Exercise | undefined {
   if (EXERCISES[id]) return EXERCISES[id];
+  if (SKI_EXERCISES[id]) return SKI_EXERCISES[id];
   for (const list of Object.values(ALTERNATIVES)) {
     const a = list.find((x) => x.id === id);
     if (a) return altAsExercise(a);
@@ -459,6 +461,9 @@ export const PHYSIO_QUESTIONS = [
   'הגב: האם התרגילים בתוכנית (חתירה, לחיצות, גשר, בירד דוג, פאלוף) מתאימים לפריצת L1–L2 ולבלט L4–L5? האם לשנות משהו?',
   'חתירה במכונה: האם מותרת כאירובי?',
   'סימני אזהרה: מה הסימנים שאחריהם צריך לעצור ולהתקשר, ומתי לגשת למיון?',
+  'סקי: האם סקי מתאים לי עם ה־OCD בברך? באיזו רמה ובאילו מסלולים?',
+  'סד/מגן ברך לסקי: האם צריך, ואיזה סוג?',
+  'הכנה לסקי: אילו תרגילי רגליים מותרים — עלייה איטית למדרגה נמוכה (10–15 ס״מ), ישיבה רדודה על קיר (ברך מעל 90°), הליכה צידית עם גומייה, גשר על רגל אחת, שיווי משקל על רגל אחת?',
   'המשך: מתי לחזור לבדיקה, ומה צריך להשתנות כדי להעלות עומס?',
 ];
 

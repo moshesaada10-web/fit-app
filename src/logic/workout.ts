@@ -3,6 +3,7 @@ import type { AppState, Draft, ExLog, Session } from '../types';
 import { exercisePain, type PainLevel } from './pain';
 import { roundToStep, suggestProgression, type HistoryEntry, type Suggestion } from './progression';
 import { positionFor, sortSessions, targetSets, type Position } from './rotation';
+import { skiFinisher, skiLogs } from './ski';
 import { boostBlock, boostUsed, effectivePriority, isAdjustmentActive, orderByPriority } from './adjust';
 
 export function exerciseHistory(sessions: Session[], exerciseId: string): HistoryEntry[] {
@@ -98,5 +99,7 @@ export function buildDraft(state: AppState, type: WorkoutId, date: string): Draf
       ...(boost ? { boosted: boost } : {}),
     };
   });
+  // סיום סקי תמיד בסוף, אחרי התרגילים העיקריים (ההתאמה השבועית לא מזיזה אותו)
+  exercises.push(...skiLogs(skiFinisher(state.settings, type, date, pos)));
   return { type, date, startedAt: Date.now(), exercises, notes: '', deload: pos.deload };
 }

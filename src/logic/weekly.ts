@@ -7,6 +7,7 @@ import { BOOST_BLOCK_HE, GOOD_RATIO, MAX_BOOSTS, MAX_BOOSTS_PER_GROUP, MAX_PRIOR
 import { isTriggered } from './pain';
 import { nextWorkout, programPosition, sortSessions, targetSets } from './rotation';
 import { resolveExerciseId } from './workout';
+import { skiFinisher } from './ski';
 
 export const SESSIONS_TARGET = 3;
 export const CARDIO_TARGET = 2;
@@ -97,6 +98,8 @@ export function weekSummary(state: AppState, ws: string): WeekSummary {
       const g = primaryGroup(resolveExerciseId(state, slot, WORKOUTS[t].slots).id);
       groups[g].planned += targetSets(slot, pos).sets;
     }
+    // סיום סקי מתוכנן (לפי סוף השבוע): נספר גם באימון שלא בוצע
+    for (const it of skiFinisher(state.settings, t, we, pos)) groups[primaryGroup(it.exerciseId)].planned += it.sets;
     t = ORDER[(ORDER.indexOf(t) + 1) % 3];
   }
   for (const g of GROUPS) groups[g].ratio = groups[g].planned > 0 ? Math.round((groups[g].done / groups[g].planned) * 100) / 100 : null;

@@ -1,6 +1,7 @@
 // תיוג קבוצות שרירים לכל תרגיל וחלופה. הקבוצה הראשונה היא העיקרית ורק היא נספרת בסיכום השבועי.
 // בחירה של האפליקציה (לא מהחוברת), לצורך איזון שבועי בלבד.
 import { ALTERNATIVES, EXERCISES } from './plan';
+import { SKI_EXERCISES } from './ski';
 
 export type MuscleGroup = 'chest' | 'back' | 'shoulders' | 'legs' | 'hamstrings' | 'arms' | 'core';
 
@@ -69,6 +70,17 @@ export const MUSCLES: Record<string, MuscleGroup[]> = {
   'alt-hammer': ['arms'],
   'alt-rope-pushdown': ['arms'],
   'alt-band-pushdown': ['arms'],
+  // הכנה לסקי
+  'ski-band-walk': ['legs'],
+  'ski-sl-bridge': ['legs', 'hamstrings'],
+  'ski-side-plank': ['core'],
+  'ski-pallof': ['core'],
+  'ski-dead-bug': ['core'],
+  'ski-balance': ['legs'],
+  'ski-step-up': ['legs'],
+  'ski-wall-sit': ['legs'],
+  'ski-sub-clamshell': ['legs'],
+  'ski-sub-bridge': ['legs', 'hamstrings'],
 };
 
 export function musclesOf(id: string): MuscleGroup[] {
@@ -83,6 +95,7 @@ export function primaryGroup(id: string): MuscleGroup {
 export function allExerciseIds(): string[] {
   const ids = new Set<string>(Object.keys(EXERCISES));
   for (const list of Object.values(ALTERNATIVES)) for (const a of list) ids.add(a.id);
+  for (const id of Object.keys(SKI_EXERCISES)) ids.add(id);
   return [...ids];
 }
 

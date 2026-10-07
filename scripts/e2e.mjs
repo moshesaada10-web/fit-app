@@ -19,7 +19,9 @@ ok(await vis(page.getByText('אימון A', { exact: true })), 'אימון רא�
 await page.getByRole('button', { name: /התחל אימון A/ }).click();
 await page.waitForSelector('.ex');
 const names = await page.locator('.ex-head .bold').allTextContents();
-ok(names.length === 8, `8 תרגילים באימון A (${names.length})`);
+ok(names.length === 11, `8 תרגילים + 3 סיום סקי באימון A (${names.length})`);
+ok(names.slice(8).join('|') === 'הליכה צידית עם גומייה|פלאנק צד (סקי)|שיווי משקל על רגל אחת', 'סיום סקי בסוף אימון A');
+ok(await vis(page.getByText('סיום: הכנה לסקי')), 'כותרת סיום סקי');
 ok(!names.includes('לחיצת רגליים') && !names.includes('כפיפת ברך במכונה בישיבה'), 'רגליים מוחלפות בלי אישור פיזיו');
 // מלא את הסט הראשון בתרגיל הפתוח
 await page.locator('.set').first().locator('input').nth(0).fill('40');

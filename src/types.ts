@@ -18,6 +18,8 @@ export interface ExLog {
   moved?: string;
   /** סט נוסף מהתאמה שבועית: הסבר קצר לתג */
   boosted?: string;
+  /** תרגיל מסיום ההכנה לסקי (תמיד בסוף האימון) */
+  ski?: boolean;
 }
 
 export interface Pain { back: number; shin: number; knee: number }
@@ -78,6 +80,10 @@ export interface Settings {
   /** תרגיל -> תאריך שבו המשתמש אישר להמשיך אחרי השהיה */
   pauseCleared: Record<string, string>;
   physioChecked: Record<string, boolean>;
+  /** בלוק הכנה לסקי (רשות) */
+  skiPrep: boolean;
+  /** תאריך הטיול YYYY-MM-DD */
+  skiTripDate: string;
 }
 
 export interface Draft {
